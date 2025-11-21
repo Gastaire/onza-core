@@ -1,16 +1,35 @@
 "use client";
 import React, { useRef, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Environment, Float, useGLTF, PerspectiveCamera, ContactShadows } from '@react-three/drei';
+import { Environment, Float, PerspectiveCamera, ContactShadows } from '@react-three/drei';
 import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
 import { ArrowRight, Cpu, Layers, Zap, Mail } from 'lucide-react';
 import * as THREE from 'three';
 import { useRouter } from 'next/navigation';
 
 // ═══════════════════════════════════════════════════════════════
-// 3D JAGUAR MODEL - Artistic representation with organic geometry
+// DEBUG COMPONENT - Remove after confirming 3D works
 // ═══════════════════════════════════════════════════════════════
+function DebugBox() {
+  const meshRef = useRef<THREE.Mesh>(null);
+  
+  useFrame((state) => {
+    if (!meshRef.current) return;
+    meshRef.current.rotation.x += 0.01;
+    meshRef.current.rotation.y += 0.01;
+  });
 
+  return (
+    <mesh ref={meshRef}>
+      <boxGeometry args={[1, 1, 1]} />
+      <meshStandardMaterial color="#ff0000" wireframe />
+    </mesh>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 3D JAGUAR MODEL - FIXED with proper TypeScript
+// ═══════════════════════════════════════════════════════════════
 interface JaguarModelProps {
   scrollProgress: MotionValue<number>;
 }
@@ -191,7 +210,6 @@ function JaguarModel({ scrollProgress }: JaguarModelProps) {
 // ═══════════════════════════════════════════════════════════════
 // 3D SCENE WITH CAMERA RIG
 // ═══════════════════════════════════════════════════════════════
-
 interface SceneProps {
   scrollProgress: MotionValue<number>;
 }
@@ -236,6 +254,10 @@ function Scene({ scrollProgress }: SceneProps) {
       
       <Environment preset="night" />
       
+      {/* DEBUG: Red spinning cube - DELETE THIS after confirming it works */}
+      <DebugBox />
+      
+      {/* JAGUAR MODEL */}
       <JaguarModel scrollProgress={scrollProgress} />
       
       {/* Contact Shadows */}
@@ -256,7 +278,6 @@ function Scene({ scrollProgress }: SceneProps) {
 // ═══════════════════════════════════════════════════════════════
 // UI COMPONENTS
 // ═══════════════════════════════════════════════════════════════
-
 interface NavbarProps {
   scrollY: number;
 }
@@ -288,7 +309,7 @@ function Navbar({ scrollY }: NavbarProps) {
         </div>
         
         <div className="hidden md:flex items-center gap-8">
-          {['Inicio', 'Servicios', 'About', 'Contacto'].map((item, i) => (
+          {['Inicio', 'Servicios', 'About', 'Contacto'].map((item) => (
             <button 
               key={item}
               onClick={() => {
@@ -329,10 +350,10 @@ const LiquidButton = ({ children, onClick, className = "" }: { children: React.R
 // ═══════════════════════════════════════════════════════════════
 // MAIN PAGE
 // ═══════════════════════════════════════════════════════════════
-
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollY, setScrollY] = React.useState(0);
+  const [canvasLoaded, setCanvasLoaded] = React.useState(false);
   
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -362,12 +383,20 @@ export default function Home() {
     <main className="relative bg-background min-h-[400vh]" ref={containerRef}>
       <Navbar scrollY={scrollY} />
       
-      {/* 3D Scene Layer */}
-      <div className="fixed top-0 left-0 w-full h-full -z-10 bg-gradient-to-b from-background via-background to-[#1B4D3E]/20">
+      {/* DEBUG INDICATOR - Remove after testing */}
+      <div className="fixed top-20 right-4 z-[100] bg-black/80 text-white p-4 rounded-lg font-mono text-xs">
+        <div>Canvas: {canvasLoaded ? '✅ LOADED' : '⏳ Loading...'}</div>
+        <div>Scroll: {scrollY.toFixed(0)}px</div>
+      </div>
+      
+      {/* 3D Scene Layer - FIXED with proper z-index */}
+      <div className="fixed top-0 left-0 w-full h-full z-0 bg-gradient-to-b from-background via-background to-[#1B4D3E]/20">
         <Canvas 
+          onCreated={() => setCanvasLoaded(true)}
           dpr={[1, 2]} 
           gl={{ 
             antialias: true, 
+            alpha: true,
             toneMapping: THREE.ACESFilmicToneMapping,
             toneMappingExposure: 1.2
           }}
@@ -379,8 +408,8 @@ export default function Home() {
         </Canvas>
       </div>
 
-      {/* Content Layer */}
-      <div className="relative">
+      {/* Content Layer - FIXED z-index hierarchy */}
+      <div className="relative z-10">
         
         {/* SECTION 1: HERO */}
         <motion.section 
