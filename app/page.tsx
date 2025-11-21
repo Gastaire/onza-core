@@ -1,7 +1,7 @@
 "use client";
 import React, { useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Environment, Sparkles, Stars } from '@react-three/drei';
+import { Sparkles, Stars } from '@react-three/drei';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight, Cpu, Code2, CheckCircle2, MousePointer2 } from 'lucide-react';
 import * as THREE from 'three';
@@ -66,9 +66,7 @@ function Scene() {
         />
         <pointLight position={[-5, 3, -2]} intensity={300} color="#d4af37" />
         
-        <Environment preset="night" />
-        
-        <JaguarShaderPlane />
+        <JaguarShaderPlane scale={4.5} />
         <BackgroundParticles />
         
         <fog attach="fog" args={['#0a0a0a', 8, 20]} />

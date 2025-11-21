@@ -109,33 +109,77 @@ void main() {
     mask = 1.0 - mask;
   }
   
-  // Desaturated/inverted version
+  // Desaturated/inverted version for outside cursor
   vec3 desaturated = vec3(dot(texColor.rgb, vec3(0.299, 0.587, 0.114)));
   vec3 inverted = 1.0 - desaturated;
   vec3 coloredVersion = texColor.rgb;
   
-  // Mix between colored (inside cursor) and desaturated (outside)
-  vec3 finalColor = mix(inverted, coloredVersion, mask);
+  // When not hovering (u_radius very small), show colored version
+  // When hovering, mix between inverted (outside) and colored (inside cursor)
+  vec3 finalColor;
+  if (u_radius < 0.01) {
+    // Show colored version when not hovering - make it very bright
+    finalColor = coloredVersion * 2.5; // Much brighter
+  } else {
+    // Apply reveal effect when hovering
+    finalColor = mix(inverted, coloredVersion * 1.8, mask);
+  }
   
   gl_FragColor = vec4(finalColor, texColor.a);
 }
 `;
 
 interface JaguarShaderPlaneProps {
-  imageUrl?: string;
+  imageUrl?: string; // Optional: path to jaguar image (use local image in /public folder)
   scale?: number;
 }
 
 export default function JaguarShaderPlane({ 
-  imageUrl = "https://images.unsplash.com/photo-1614027164847-1b28cfe1df60?w=1200&q=80",
+  imageUrl,
   scale = 3.5
 }: JaguarShaderPlaneProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
   const { viewport, size, pointer } = useThree();
   
-  // Load texture
-  const texture = useTexture(imageUrl);
+  // Create a procedural jaguar-like texture
+  const texture = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1024;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      // Create a gradient with jaguar-like colors
+      const gradient = ctx.createRadialGradient(512, 512, 100, 512, 512, 512);
+      gradient.addColorStop(0, '#d4af37');
+      gradient.addColorStop(0.3, '#8B7355');
+      gradient.addColorStop(0.6, '#4a4a4a');
+      gradient.addColorStop(1, '#1a1a1a');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Add some spots for jaguar-like appearance
+      ctx.fillStyle = '#d4af37';
+      const spots = [
+        { x: 0.3, y: 0.3, r: 50 },
+        { x: 0.7, y: 0.3, r: 45 },
+        { x: 0.5, y: 0.5, r: 60 },
+        { x: 0.2, y: 0.6, r: 40 },
+        { x: 0.8, y: 0.7, r: 50 },
+        { x: 0.4, y: 0.8, r: 45 },
+        { x: 0.15, y: 0.15, r: 35 },
+        { x: 0.85, y: 0.2, r: 40 },
+      ];
+      
+      spots.forEach(spot => {
+        ctx.globalAlpha = 0.3;
+        ctx.beginPath();
+        ctx.arc(spot.x * canvas.width, spot.y * canvas.height, spot.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+    return new THREE.CanvasTexture(canvas);
+  }, []);
   
   // State for hover animations
   const hoverState = useRef({
