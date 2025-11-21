@@ -1,7 +1,6 @@
 "use client";
 import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 
 // Simplex noise function for organic marbling
